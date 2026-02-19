@@ -1,5 +1,6 @@
 from sqlalchemy import Column, DateTime, func
-from sqlalchemy.orm import declarative_mixin, declared_attr
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import declarative_mixin
 import uuid
 
 @declarative_mixin

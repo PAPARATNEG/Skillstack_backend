@@ -1,6 +1,9 @@
 from sqlalchemy import String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .base import Base, UUIDMixin, TimestampMixin
+from app.database import Base
+from .base import UUIDMixin, TimestampMixin
+import uuid
+import datetime
 
 class GitHubIntegration(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "github_integrations"
