@@ -23,4 +23,3 @@ class SkillOut(SkillBase):
     created_at: datetime
     updated_at: datetime
     status: Literal["planned", "in_progress", "learned", "expert"]
-    position: Optional[dict] = None  # {x: float, y: float}

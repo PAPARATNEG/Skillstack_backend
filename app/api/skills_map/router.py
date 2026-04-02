@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.skill import Skill
-from app.models.skill_node import SkillNode
 from app.models.skill_connection import SkillConnection
 from app.models.user import User
 from app.schemas.skill import SkillOut
@@ -18,13 +17,13 @@ def get_skills_map(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Все навыки пользователя с позициями
+    # Все навыки пользователя (без позиций)
     skills = db.query(Skill).filter(
         Skill.user_id == current_user.id
-    ).options(joinedload(Skill.node)).all()
+    ).all()
     nodes = [enrich_skill(s) for s in skills]
     
-    # Все связи (только между навыками пользователя)
+    # Все связи
     connections = db.query(SkillConnection).join(
         Skill, SkillConnection.from_skill_id == Skill.id
     ).filter(Skill.user_id == current_user.id).all()
@@ -38,24 +37,6 @@ def get_skills_map(
             "created_at": conn.created_at.isoformat()
         })
     return {"nodes": nodes, "edges": edges}
-
-@router.post("/nodes/{skill_id}/position")
-def save_node_position(
-    skill_id: UUID,
-    position: dict,  # ожидаем {"x": float, "y": float}
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    node = db.query(SkillNode).join(Skill).filter(
-        Skill.id == skill_id,
-        Skill.user_id == current_user.id
-    ).first()
-    if not node:
-        raise HTTPException(404, "Skill node not found")
-    node.position_x = position.get("x", 0)
-    node.position_y = position.get("y", 0)
-    db.commit()
-    return {"message": "Position saved"}
 
 @router.post("/connections", response_model=SkillConnectionOut, status_code=201)
 def create_connection(

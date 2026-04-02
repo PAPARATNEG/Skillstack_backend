@@ -16,7 +16,6 @@ class Skill(Base, UUIDMixin, TimestampMixin):
     # Relationships
     user = relationship("User", back_populates="skills")
     skill_group = relationship("SkillGroup", back_populates="skills")
-    node = relationship("SkillNode", back_populates="skill", uselist=False, cascade="all, delete-orphan")
     outgoing_connections = relationship("SkillConnection", foreign_keys="SkillConnection.from_skill_id", back_populates="from_skill", cascade="all, delete-orphan")
     incoming_connections = relationship("SkillConnection", foreign_keys="SkillConnection.to_skill_id", back_populates="to_skill", cascade="all, delete-orphan")
 

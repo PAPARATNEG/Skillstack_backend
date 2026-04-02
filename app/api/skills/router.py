@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.skill import Skill
-from app.models.skill_node import SkillNode
 from app.models.skill_group import SkillGroup
 from app.models.user import User
 from app.schemas.skill import SkillCreate, SkillUpdate, SkillOut
@@ -24,7 +23,6 @@ def get_skill_status(level: int) -> str:
 
 def enrich_skill(skill: Skill):
     status = get_skill_status(skill.level)
-    pos = {"x": skill.node.position_x if skill.node else 0, "y": skill.node.position_y if skill.node else 0}
     return {
         **skill.__dict__,
         "status": status,
@@ -48,7 +46,7 @@ def get_skills(
         query = query.filter(Skill.name.ilike(f"%{search}%"))
     
     # Сначала получим все навыки, потом отфильтруем по статусу (вычисляемое поле)
-    skills = query.options(joinedload(Skill.node)).offset(offset).limit(limit).all()
+    skills = query.offset(offset).limit(limit).all()
     result = []
     for s in skills:
         enriched = enrich_skill(s)
@@ -95,21 +93,16 @@ def create_skill(
     if existing:
         raise HTTPException(400, "Skill with this name already exists in the group")
     
-    # Создаём навык
+    # Создаём навык (без создания SkillNode)
     skill = Skill(
         **data.model_dump(),
         user_id=current_user.id,
         skill_group_id=group_id
     )
     db.add(skill)
-    db.flush()  # чтобы получить id и создать node триггером (или сделаем вручную)
-    
-    # Создаём позицию узла (триггер может это сделать, но для надёжности сделаем здесь)
-    node = SkillNode(skill_id=skill.id)
-    db.add(node)
     db.commit()
     db.refresh(skill)
-    skill.node = node
+    
     enriched = enrich_skill(skill)
     return SkillOut.model_validate(enriched)
 
